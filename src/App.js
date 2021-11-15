@@ -22,6 +22,8 @@ function App() {
   //state to store player choices (2)
   const [choiceOne, setChoiceOne] = useState(null)
   const [choiceTwo, setChoiceTwo] = useState(null)
+  //state to disable cards after 2 are selected, until reset
+  const [disabled, setDisabled] = useState(false)
 
   //shuffle cards function runs at game start
   const shuffleCards = () => {
@@ -31,6 +33,9 @@ function App() {
       .sort(() => Math.random() - 0.5)
       //map over each individual card and add random key id
       .map((card) => ({ ...card, id: Math.random() }))
+    //set card selections to null, in case game was not finished previously
+    setChoiceOne(null)
+    setChoiceTwo(null)
     //set state to newly created, randomzied array of card obj's with id's
     setCards(shuffledCards)
     //reset user turns to zero for new game
@@ -48,10 +53,12 @@ function App() {
     console.log("turn2 val", choiceTwo)
   }
 
-  //compare 2 cards
+  //compare 2 cards when they both have a value
   useEffect(() => {
     //runs if both cards have a value, not null
     if (choiceOne && choiceTwo) {
+      //after 2 cards selected, disable all cards from being selected
+      setDisabled(true)
       //if both card choices match
       if (choiceOne.src === choiceTwo.src) {
         // console.log("Match")
@@ -78,12 +85,18 @@ function App() {
     }
   }, [choiceOne, choiceTwo])
 
-  //reset choices and increase turns counter
+  //reset choices, increase turns counter, enable cards to be selectable again
   const resetTurn = () => {
     setChoiceOne(null)
     setChoiceTwo(null)
     setTurns(prevTurns => prevTurns + 1)
+    setDisabled(false)
   }
+
+  //start new game automatically (will only run once, when page first loads - we aren't watching anything in the dependancy array)
+  useEffect(() => {
+    shuffleCards()
+  }, [])
 
   return (
     <div className="App">
@@ -92,13 +105,18 @@ function App() {
       <div className="card-grid">
         {cards.map(card => (
           <SingleCard key={card.id}
+            //looks at each individual card and passes the prop to SingleCard.js
             card={card}
+            //loads the selected card as either choice 1 or 2 (above)
             handleChoice={handleChoice}
             //if either card selected matches card displayed or it's part of pair already matched, make true and pass to SingleCard component
             flipped={card === choiceOne || card === choiceTwo || card.matched}
+            //pass disabled value as prop (default false, true only while 2 cards are selected)
+            disabled={disabled}
           />
         ))}
       </div>
+      <p>Turns: {turns}</p>
     </div>
   );
 }
